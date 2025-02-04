@@ -1,0 +1,228 @@
+
+import java.util.Random;
+import java.util.Scanner;
+import java.util.Locale;
+import java.util.Arrays;
+
+
+
+public class BatalhaNav 
+{
+	
+	public static final int BOARD_SIZE =7;
+	public static final int SHIP_SIZE =3;
+	public static final int MAX_SHIPS =3;
+	public static char[][] board;
+	public static Scanner sc = new Scanner(System.in);
+	public static int linha, coluna;
+	
+	public static void main(String[] args) 
+	{
+		short playAgain;
+		do 
+		{
+			montaTabuleiro();
+			posicionaNavios();
+			imprimeTabuleiro();
+			startGame();
+			System.out.println("Jogar novamente? (1- Sim // 2 - Não)");
+			playAgain = sc.nextShort();
+		}while (playAgain == 1);
+		System.out.print("OBRIGADO POR JOGAR NOSSO JOGO!");
+
+	}
+	
+	
+	
+	
+	// Método para criar o tabuleiro vazio.
+	public static void montaTabuleiro() 
+	{
+		System.out.println("Aguarde...");
+		board = new char[BOARD_SIZE][BOARD_SIZE];
+		for (int i=0;i<BOARD_SIZE;i++)
+			Arrays.fill(board[i], '.');
+	}
+	
+	//Método para posicionar os navios no tabuleiro de forma aleatória.
+	public static void posicionaNavios() 
+	{
+		Random rand = new Random();
+		for(int qntNavios =0;qntNavios <MAX_SHIPS;) 
+		{
+			int posX = rand.nextInt(BOARD_SIZE);
+			int posY = rand.nextInt(BOARD_SIZE);
+			if(mapeaNavio(posX,posY)) {
+				qntNavios++;
+			}
+		}
+	}
+	
+	/*Método para validar o posicionamento dos navios, evitando sobreposição (um navio em cima de outro),
+	e também validando se há espaço para o navio de tamanho "SHIP-SIZE", evitando colocar um navio na borda do tabuleiro, por exemplo.*/
+	public static boolean mapeaNavio(int x, int y)
+	{
+		if(x + SHIP_SIZE <= BOARD_SIZE)
+		{
+			if(!temNavioColuna(x,y)) 
+			{
+				colocaNavio(x,y,false);
+				return true;
+			}
+		}else if(y + SHIP_SIZE <= BOARD_SIZE)
+		{
+			if(!temNavioLinha(x,y)) 
+			{
+				colocaNavio(x,y,true);
+				return true;
+			}
+			
+		}
+		return false;
+	}
+
+	
+	
+	
+	//Método auxiliar, para conferir se há navio na coluna escolhida.
+	public static boolean temNavioColuna(int x, int y)
+	{
+		return contaPartesNavioColuna(x,y,'#') != 0;
+	}
+	// Método auxiliar, para contar as partes do navio já colocado numa coluna.
+	public static int contaPartesNavioColuna(int x, int y, char symbol) 
+	{
+		int contaParteY = 0;
+		for(int k = x; k < (x + SHIP_SIZE); k++) 
+			if(board[k][y] == symbol) contaParteY++;
+		
+		return contaParteY;
+		
+	}
+	
+	//Método auxiliar, para conferir se há navio na linha escolhida.
+	public static boolean temNavioLinha(int x, int y)
+	{
+		return contaPartesNavioLinha(x,y,'#') != 0;
+	}
+	
+	// Método auxiliar, para contar as partes do navio já colocado numa linha.
+	public static int contaPartesNavioLinha(int x, int y, char symbol) 
+	{
+		int contaParteX = 0;
+		for(int k = y; k < (y + SHIP_SIZE); k++) 
+			if(board[x][k] == symbol) contaParteX++;
+		
+		return contaParteX;
+	}
+	
+	//Método auxiliar, para posicionar um navio.
+	public static void colocaNavio(int x, int y, boolean isRow) 
+	{
+		for(int k = x; k < (x + SHIP_SIZE); k++) 
+		{
+			if(isRow)
+				board[y][k] = '#';
+			else
+				board[k][y] = '#';
+		}
+	}
+	
+	//Método para imprimir as linhas do jogo, ja com os navios posicionados.
+	public static void imprimeLinha(char tab[])
+	{
+		for (int i = 0; i < tab.length;i++ ) 
+		{ 
+			if(tab[i] == '#')
+				System.out.print(". ");
+			else
+				System.out.print(tab[i] + " ");
+		}
+		System.out.println();
+		
+	}
+	
+	/*Método para imprimir o tabuleiro total, chamando todas as linhas conforme o tamanho do tabuleiro (BOARD_SIZE).
+	Nota-se que há um método auxiliar "imprimeLinhadeBaixo, que é uma forma estética de saltar o espaço entre o tabuleiro e o "menu do jogador".
+	Nota-se também que o método utiliza de um conversor de índice, afim de indicar ao jogador sua respectiva linha ((char)(i+65), que utiliza a tabela ASCII.*/
+	public static void imprimeTabuleiro() 
+	{
+		for (int i = 0; i< BOARD_SIZE; i++) 
+		{
+			System.out.print((char)(i+65) + " |");
+			imprimeLinha(board[i]);
+		}
+		imprimeLinhadeBaixo();
+	}
+	
+	
+	
+	//Método auxiliar, que imprime uma linha estética, abaixo do tabuleiro, afim de saltar espaço entre o próprio tabuleiro e o "menu do jogador"
+	public static void imprimeLinhadeBaixo() 
+	{
+		System.out.print("-----------------------------\n   |");
+		for(int i=0; i<BOARD_SIZE; i++) 
+		{
+			System.out.print(i+1+" ");
+		}
+		System.out.println("\n");
+	}
+
+	//Método para iniciar o jogo, contando as rodadas que o jogador leva até o fim do jogo, nota-se que o jogo acaba quando todos os navios foram afundados.
+	public static void startGame() 
+	{
+		int rodada = 0;
+		int partesAcertadas = 0;
+		do 
+		{
+			lerCoordenadas();
+			System.out.println("-- -- -- -- -- __ __ __ -- -- -- -- --");
+			System.out.printf("Tentativa: %d \n", ++rodada);
+			lancaBomba();
+			if(board[linha][coluna] == 'x') 
+				partesAcertadas++;
+		}while(partesAcertadas < MAX_SHIPS * SHIP_SIZE);
+		
+		System.out.printf("Parabéns! Você afundou os navios!" + "\n Tentativas totais: %d ", rodada);
+		
+	}
+	//Método para validar uma jogada realizada, onde caso o jogador NÃO acerte um navio (marcado por #), o tabuleiro é atualizado com um símbolo "~",
+	//caso contrário, se o jogador acertar um navio, o tabuleiro é atualizado com um "x".
+	private static void lancaBomba() 
+	{
+		if(board[linha][coluna] == '.')
+			board[linha][coluna] = '~';
+		else board[linha][coluna] = 'x';
+		imprimeTabuleiro();	
+	}
+	
+	//Método que recebe a coordenada escolhida pelo jogador. Nota: a reutilização do conversor de índice utilizando a tabela ASCII, 
+	//para o bom funcionamento do jogo, evitando a maioria dos problemas.
+	//  
+	public static void lerCoordenadas() 
+	{
+		do 
+		{
+			System.out.println("Digite as coordenadas da sua jogada (separadas por espaço): (Ex: B 3)");
+			linha = sc.next().toUpperCase(Locale.ROOT).charAt(0)-65;
+			coluna = sc.next().charAt(0)- 49;
+		}while(coordenadaInvalida());
+	}
+	
+	//Método que é retornado caso a coordenada escolhida seja invalida, ou ja tenha sido escolhida.
+	private static boolean coordenadaInvalida() 
+	{
+		if(linha < 0 || linha >= BOARD_SIZE || coluna < 0 || coluna >= BOARD_SIZE ) 
+		{
+			System.out.println("Coordenadas inválidas!\n Tente novamente");
+		return true;
+		}
+	
+		if(board[linha][coluna] == '~' || board[linha][coluna] == 'x')
+		{
+			System.out.println("Coordenada ja foi bombardeada!\n Tente novamente");
+			return true;
+		}
+		return false;
+	}
+}
